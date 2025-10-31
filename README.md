@@ -108,22 +108,16 @@ Returns the next expected candle close times for debugging and verification.
 
 1. **Time-Based Detection**: Uses deterministic time logic to detect candle closes:
    - **NSE 15-minute candles**: Close at predictable times (9:15, 9:30, 9:45, 10:00, ..., 15:30 IST) during market hours (9:15 AM - 3:30 PM IST, weekdays only)
-   - **Crypto 4-hour candles**: Close at predictable times (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+   - **Crypto 4-hour candles**: Close at predictable times (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 IST - Asia/Kolkata timezone)
 2. **Scheduler**: The application uses APScheduler to check for candle closes every minute
-3. **Market Data Fetching**: Only fetches candle data when a candle close is detected, reducing API calls
-4. **Phone Calls**: When a candle close is detected, automatically calls your phone with OHLCV information
-
-## Market Data Sources
-
-- **NSE**: Yahoo Finance (yfinance library)
-- **Crypto**: Binance Exchange (ccxt library)
+3. **Phone Calls**: When a candle close is detected, automatically calls your phone with notification
 
 ## Notes
 
-- **Time-Based Logic**: The system uses deterministic time calculations instead of polling APIs to detect candle closes, making it more efficient and reliable
+- **Time-Based Logic**: The system uses deterministic time calculations to detect candle closes, making it efficient and reliable
 - **NSE Market Hours**: Only monitors during market hours (9:15 AM - 3:30 PM IST) on weekdays
-- **Crypto Markets**: Crypto markets run 24/7, so 4-hour candles are monitored continuously
-- **API Efficiency**: Market data is only fetched when a candle close is detected, reducing API rate limit usage
+- **Crypto Markets**: Crypto markets run 24/7, so 4-hour candles are monitored continuously using Asia/Kolkata timezone
+- **No External Data Required**: The system works purely based on time logic, no market data APIs needed
 - The application runs continuously once started
 - Phone calls are made using Twilio's Voice API
 - Candle detection checks run every minute, but calls are only made when a candle actually closes based on time logic

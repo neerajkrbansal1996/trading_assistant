@@ -96,34 +96,32 @@ class CandleTimeService:
         
         return None
     
-    def get_crypto_4h_candle_close_time(self, dt: Optional[datetime] = None, use_utc: bool = True) -> Optional[datetime]:
+    def get_crypto_4h_candle_close_time(self, dt: Optional[datetime] = None) -> Optional[datetime]:
         """
         Get the 4-hour candle close time for crypto
-        Crypto 4h candles close at: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (UTC)
+        Crypto 4h candles close at: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (in configured timezone, default: Asia/Kolkata)
         """
         if dt is None:
             dt = self.get_current_time()
         
-        if use_utc:
-            # Convert to UTC for crypto
-            if dt.tzinfo is None:
-                dt = self.timezone.localize(dt)
-            dt_utc = dt.astimezone(self.utc)
-        else:
-            dt_utc = dt
+        # Ensure datetime is in the configured timezone
+        if dt.tzinfo is None:
+            dt = self.timezone.localize(dt)
+        elif dt.tzinfo != self.timezone:
+            dt = dt.astimezone(self.timezone)
         
-        # Round down to the nearest 4-hour mark
-        hour = (dt_utc.hour // 4) * 4
-        candle_close = dt_utc.replace(minute=0, second=0, microsecond=0, hour=hour)
+        # Round down to the nearest 4-hour mark in the configured timezone
+        hour = (dt.hour // 4) * 4
+        candle_close = dt.replace(minute=0, second=0, microsecond=0, hour=hour)
         
         return candle_close
     
-    def get_next_crypto_4h_candle_close_time(self, dt: Optional[datetime] = None, use_utc: bool = True) -> Optional[datetime]:
-        """Get the next 4-hour candle close time for crypto"""
+    def get_next_crypto_4h_candle_close_time(self, dt: Optional[datetime] = None) -> Optional[datetime]:
+        """Get the next 4-hour candle close time for crypto (in configured timezone)"""
         if dt is None:
             dt = self.get_current_time()
         
-        current_candle = self.get_crypto_4h_candle_close_time(dt, use_utc)
+        current_candle = self.get_crypto_4h_candle_close_time(dt)
         
         if current_candle is None:
             return None
@@ -164,10 +162,17 @@ class CandleTimeService:
     def has_crypto_candle_closed_since(self, last_check: Optional[datetime], current_time: Optional[datetime] = None) -> Tuple[bool, Optional[datetime]]:
         """
         Check if a crypto 4-hour candle has closed since last check
+        Uses the configured timezone (default: Asia/Kolkata) instead of UTC
         Returns: (has_closed, candle_close_time)
         """
         if current_time is None:
             current_time = self.get_current_time()
+        
+        # Ensure current_time is in the configured timezone
+        if current_time.tzinfo is None:
+            current_time = self.timezone.localize(current_time)
+        elif current_time.tzinfo != self.timezone:
+            current_time = current_time.astimezone(self.timezone)
         
         if last_check is None:
             # First check - get current candle
@@ -176,25 +181,21 @@ class CandleTimeService:
                 return True, current_candle
             return False, None
         
-        # Convert last_check to UTC for comparison
+        # Ensure last_check is in the configured timezone
         if last_check.tzinfo is None:
             last_check = self.timezone.localize(last_check)
-        last_check_utc = last_check.astimezone(self.utc)
+        elif last_check.tzinfo != self.timezone:
+            last_check = last_check.astimezone(self.timezone)
         
-        # Get the next 4-hour candle after last_check
-        next_candle_utc = self.get_next_crypto_4h_candle_close_time(last_check_utc, use_utc=True)
+        # Get the next 4-hour candle after last_check (in configured timezone)
+        next_candle = self.get_next_crypto_4h_candle_close_time(last_check)
         
-        if next_candle_utc is None:
+        if next_candle is None:
             return False, None
         
-        # Convert current_time to UTC for comparison
-        if current_time.tzinfo is None:
-            current_time = self.timezone.localize(current_time)
-        current_time_utc = current_time.astimezone(self.utc)
-        
         # Check if we've passed the next candle close time
-        if current_time_utc >= next_candle_utc:
-            return True, next_candle_utc.astimezone(self.timezone)
+        if current_time >= next_candle:
+            return True, next_candle
         
         return False, None
 
