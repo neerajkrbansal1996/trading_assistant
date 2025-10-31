@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
     
     print("🚀 Candle tracking service started!")
     print("📊 Monitoring NSE 15-minute candles")
-    print("🪙 Monitoring Crypto 4-hour candles (BTC, ETH)")
+    print("🪙 Monitoring Crypto 4-hour candles (01:30, 05:30, 09:30, 13:30, 17:30, 21:30 IST)")
     
     yield
     
@@ -68,9 +68,9 @@ async def root():
     return {
         "message": "Trading Assistant API is running",
         "status": "active",
-        "features": {
+            "features": {
             "nse_15min_candles": "Tracking 15-minute candle closes for NSE",
-            "crypto_4h_candles": "Tracking 4-hour candle closes for BTC and ETH"
+            "crypto_4h_candles": "Tracking 4-hour candle closes for Crypto (01:30, 05:30, 09:30, 13:30, 17:30, 21:30 IST)"
         }
     }
 
@@ -99,15 +99,13 @@ async def get_next_candle_times():
         current_time = candle_time.get_current_time()
         
         next_nse = candle_time.get_next_nse_15min_candle_close_time(current_time)
-        next_btc = candle_time.get_next_crypto_4h_candle_close_time(current_time)
-        next_eth = candle_time.get_next_crypto_4h_candle_close_time(current_time)
+        next_crypto = candle_time.get_next_crypto_4h_candle_close_time(current_time)
         
         return {
             "success": True,
             "current_time": current_time.isoformat(),
             "next_nse_15min": next_nse.isoformat() if next_nse else None,
-            "next_btc_4h": next_btc.isoformat() if next_btc else None,
-            "next_eth_4h": next_eth.isoformat() if next_eth else None,
+            "next_crypto_4h": next_crypto.isoformat() if next_crypto else None,
             "nse_market_open": candle_time.is_nse_market_open(current_time)
         }
     except Exception as e:

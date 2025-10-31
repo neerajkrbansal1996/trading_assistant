@@ -108,7 +108,7 @@ Returns the next expected candle close times for debugging and verification.
 
 1. **Time-Based Detection**: Uses deterministic time logic to detect candle closes:
    - **NSE 15-minute candles**: Close at predictable times (9:15, 9:30, 9:45, 10:00, ..., 15:30 IST) during market hours (9:15 AM - 3:30 PM IST, weekdays only)
-   - **Crypto 4-hour candles**: Close at predictable times (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 IST - Asia/Kolkata timezone)
+   - **Crypto 4-hour candles**: Close at predictable times (01:30, 05:30, 09:30, 13:30, 17:30, 21:30 IST - all crypto coins follow the same schedule)
 2. **Scheduler**: The application uses APScheduler to check for candle closes every minute
 3. **Phone Calls**: When a candle close is detected, automatically calls your phone with notification
 

@@ -99,7 +99,7 @@ class CandleTimeService:
     def get_crypto_4h_candle_close_time(self, dt: Optional[datetime] = None) -> Optional[datetime]:
         """
         Get the 4-hour candle close time for crypto
-        Crypto 4h candles close at: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (in configured timezone, default: Asia/Kolkata)
+        Crypto 4h candles close at: 01:30, 05:30, 09:30, 13:30, 17:30, 21:30 IST (Asia/Kolkata timezone)
         """
         if dt is None:
             dt = self.get_current_time()
@@ -110,9 +110,31 @@ class CandleTimeService:
         elif dt.tzinfo != self.timezone:
             dt = dt.astimezone(self.timezone)
         
-        # Round down to the nearest 4-hour mark in the configured timezone
-        hour = (dt.hour // 4) * 4
-        candle_close = dt.replace(minute=0, second=0, microsecond=0, hour=hour)
+        # Find the current 4-hour period
+        # Candles close at :30 minutes past these hours: 1, 5, 9, 13, 17, 21
+        current_hour = dt.hour
+        current_minute = dt.minute
+        
+        # Determine which 4-hour period we're in
+        # Periods: 01:30, 05:30, 09:30, 13:30, 17:30, 21:30
+        # Map hour to candle close hour: 0-1->1, 2-5->5, 6-9->9, 10-13->13, 14-17->17, 18-21->21, 22-23->1(next day)
+        if current_hour < 1 or (current_hour == 1 and current_minute < 30) or current_hour >= 22:
+            # Before 01:30 or after 21:30, belongs to 01:30 candle
+            if current_hour >= 22:
+                # Next day's 01:30
+                candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=1) + timedelta(days=1)
+            else:
+                candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=1)
+        elif current_hour < 5 or (current_hour == 5 and current_minute < 30):
+            candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=5)
+        elif current_hour < 9 or (current_hour == 9 and current_minute < 30):
+            candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=9)
+        elif current_hour < 13 or (current_hour == 13 and current_minute < 30):
+            candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=13)
+        elif current_hour < 17 or (current_hour == 17 and current_minute < 30):
+            candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=17)
+        else:  # current_hour < 21 or (current_hour == 21 and current_minute < 30)
+            candle_close = dt.replace(minute=30, second=0, microsecond=0, hour=21)
         
         return candle_close
     
@@ -121,13 +143,38 @@ class CandleTimeService:
         if dt is None:
             dt = self.get_current_time()
         
+        # Ensure datetime is in the configured timezone
+        if dt.tzinfo is None:
+            dt = self.timezone.localize(dt)
+        elif dt.tzinfo != self.timezone:
+            dt = dt.astimezone(self.timezone)
+        
         current_candle = self.get_crypto_4h_candle_close_time(dt)
         
         if current_candle is None:
             return None
         
-        # Add 4 hours to get next candle
-        next_candle = current_candle + timedelta(hours=4)
+        # If current time is before the current candle close time, return the current candle
+        if dt < current_candle:
+            return current_candle
+        
+        # Otherwise, find the next candle in the sequence
+        # Crypto candles close at: 01:30, 05:30, 09:30, 13:30, 17:30, 21:30
+        candle_hours = [1, 5, 9, 13, 17, 21]
+        current_hour = current_candle.hour
+        
+        # Find next hour in sequence
+        next_hour = None
+        for hour in candle_hours:
+            if hour > current_hour:
+                next_hour = hour
+                break
+        
+        if next_hour is None:
+            # Wraps to next day at 01:30
+            next_candle = current_candle.replace(hour=1, minute=30, second=0, microsecond=0) + timedelta(days=1)
+        else:
+            next_candle = current_candle.replace(hour=next_hour, minute=30, second=0, microsecond=0)
         
         return next_candle
     
