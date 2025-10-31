@@ -140,6 +140,54 @@ Returns the next expected candle close times for debugging and verification.
    - Ensure virtual environment is activated
    - Reinstall dependencies: `pip install -r requirements.txt`
 
+## Deployment to Fly.io
+
+### Prerequisites
+
+1. Install [Fly CLI](https://fly.io/docs/getting-started/installing-flyctl/)
+2. Sign up for a [Fly.io account](https://fly.io/app/sign-up)
+
+### Deploy Steps
+
+1. **Login to Fly.io**:
+   ```bash
+   fly auth login
+   ```
+
+2. **Set up secrets** (environment variables):
+   ```bash
+   fly secrets set TWILIO_ACCOUNT_SID=your_twilio_account_sid
+   fly secrets set TWILIO_AUTH_TOKEN=your_twilio_auth_token
+   fly secrets set TWILIO_PHONE_NUMBER=+1234567890
+   fly secrets set YOUR_PHONE_NUMBER=+1234567890
+   fly secrets set TIMEZONE=Asia/Kolkata
+   ```
+
+3. **Deploy the application**:
+   ```bash
+   fly deploy
+   ```
+
+4. **Check status**:
+   ```bash
+   fly status
+   ```
+
+5. **View logs**:
+   ```bash
+   fly logs
+   ```
+
+The application will be available at `https://trading-assistant.fly.dev` (or your custom domain).
+
+### Configuration
+
+- The `fly.toml` file is configured to:
+  - Run in Mumbai region (`bom`) for better latency with Asia/Kolkata timezone
+  - Use 512MB RAM and 1 shared CPU
+  - Auto-start machines and keep at least 1 running
+  - Health check on `/health` endpoint
+
 ## License
 
 MIT
